@@ -6,8 +6,19 @@ interface MessageProps {
   content: string;
 }
 
+function TypingDots() {
+  return (
+    <div className="flex items-center gap-1.5 py-1" aria-label="Assistant is thinking">
+      <span className="w-2 h-2 rounded-full bg-terracotta/60 animate-bounce [animation-delay:-0.3s]" />
+      <span className="w-2 h-2 rounded-full bg-terracotta/60 animate-bounce [animation-delay:-0.15s]" />
+      <span className="w-2 h-2 rounded-full bg-terracotta/60 animate-bounce" />
+    </div>
+  );
+}
+
 export default function Message({ role, content }: MessageProps) {
   const isUser = role === 'user';
+  const isEmptyAi = !isUser && content.length === 0;
 
   return (
     <motion.div
@@ -23,7 +34,7 @@ export default function Message({ role, content }: MessageProps) {
             : 'bg-transparent border border-terracotta/40 text-text-main rounded-2xl rounded-tl-sm'
         }`}
       >
-        {content}
+        {isEmptyAi ? <TypingDots /> : content}
       </div>
     </motion.div>
   );

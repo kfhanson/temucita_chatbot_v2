@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Mic, Paperclip, ArrowUp } from 'lucide-react';
+import { Search, ArrowUp } from 'lucide-react';
 
 interface InputAreaProps {
   onSendMessage: (message: string) => void;
@@ -63,22 +63,15 @@ export default function InputArea({ onSendMessage, isLoading, isSearchEnabled, o
               <span>Search</span>
             </button>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3">
-              <button className="p-2.5 rounded-full border border-terracotta/30 text-text-main hover:bg-terracotta/5 transition-colors">
-                <Mic size={18} />
-              </button>
-              <button className="p-2.5 rounded-full border border-terracotta/30 text-text-main hover:bg-terracotta/5 transition-colors">
-                <Paperclip size={18} />
-              </button>
-              <button 
-                onClick={handleSend}
-                disabled={!input.trim() || isLoading}
-                className="p-2.5 rounded-full bg-terracotta text-white hover:bg-terracotta-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ArrowUp size={18} strokeWidth={2.5} />
-              </button>
-            </div>
+            {/* Send Button */}
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || isLoading}
+              className="p-2.5 rounded-full bg-terracotta text-white hover:bg-terracotta-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Send message"
+            >
+              <ArrowUp size={18} strokeWidth={2.5} />
+            </button>
           </div>
         </div>
       </div>

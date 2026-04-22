@@ -1,26 +1,45 @@
-import React, { useState } from 'react';
-import { PanelLeft, SquarePen, Search, Settings, MoreHorizontal, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { PanelLeft, SquarePen, Search, Settings, MoreHorizontal, ChevronDown, Trash2 } from 'lucide-react';
 
-interface SidebarProps {
-  onNewChat: () => void;
+export interface SidebarChat {
+  id: string;
+  title: string | null;
 }
 
-const MOCK_CHATS = Array(8).fill(null).map((_, i) => ({
-  id: i.toString(),
-  title: "Tes kalimat disini"
-}));
+interface SidebarProps {
+  chats: SidebarChat[];
+  activeChatId: string | null;
+  onNewChat: () => void;
+  onSelectChat: (id: string) => void;
+  onDeleteChat: (id: string) => void;
+}
 
-export default function Sidebar({ onNewChat }: SidebarProps) {
+export default function Sidebar({ chats, activeChatId, onNewChat, onSelectChat, onDeleteChat }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const filteredChats = MOCK_CHATS.filter(chat => 
-    chat.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredChats = chats.filter((chat) => {
+    const title = chat.title ?? 'Untitled';
+    return title.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!openMenuId) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [openMenuId]);
 
   return (
     <div className={`h-full bg-bg-sidebar flex flex-col py-6 border-r border-terracotta/10 shrink-0 transition-all duration-300 ease-in-out ${isExpanded ? 'w-[280px] px-6' : 'w-20 items-center'}`}>
-      
+
       {/* Logo Area */}
       <div className={`mb-8 flex items-center ${isExpanded ? 'gap-3' : 'justify-center'}`}>
         <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
@@ -32,7 +51,7 @@ export default function Sidebar({ onNewChat }: SidebarProps) {
 
       {/* Panel Toggle */}
       <div className={`w-full flex ${isExpanded ? 'justify-start mb-6' : 'justify-center mb-6'}`}>
-        <button 
+        <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="p-2 rounded-xl text-text-main hover:bg-terracotta/10 transition-colors"
         >
@@ -43,17 +62,17 @@ export default function Sidebar({ onNewChat }: SidebarProps) {
       {/* New Chat & Search */}
       {isExpanded ? (
         <div className="flex flex-col gap-4 w-full mb-6">
-          <button 
+          <button
             onClick={onNewChat}
             className="w-full py-3 px-4 rounded-xl bg-terracotta text-white shadow-sm transition-transform hover:scale-[1.02] flex items-center justify-center gap-2 font-medium"
           >
             <SquarePen size={20} strokeWidth={2} />
             New Chat
           </button>
-          
+
           <div className="relative w-full">
             <Search size={18} strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-main" />
-            <input 
+            <input
               type="text"
               placeholder="Search Chat"
               value={searchQuery}
@@ -64,13 +83,13 @@ export default function Sidebar({ onNewChat }: SidebarProps) {
         </div>
       ) : (
         <div className="flex flex-col gap-6 w-full items-center mb-6">
-          <button 
+          <button
             onClick={onNewChat}
             className="p-3 rounded-xl bg-terracotta text-white shadow-sm transition-transform hover:scale-105"
           >
             <SquarePen size={24} strokeWidth={1.5} />
           </button>
-          <button 
+          <button
             onClick={() => setIsExpanded(true)}
             className="p-3 rounded-xl text-text-main hover:bg-terracotta/10 transition-colors"
           >
@@ -85,12 +104,61 @@ export default function Sidebar({ onNewChat }: SidebarProps) {
           <div className="flex items-center gap-1 mb-2 px-2 text-text-main font-bold">
             Your Chat <ChevronDown size={16} strokeWidth={2} />
           </div>
-          {filteredChats.map(chat => (
-            <div key={chat.id} className="flex items-center justify-between w-full p-2 rounded-lg hover:bg-terracotta/5 cursor-pointer group transition-colors">
-              <span className="text-text-main truncate pr-4">{chat.title}</span>
-              <MoreHorizontal size={16} className="text-text-muted opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+          {filteredChats.length === 0 ? (
+            <div className="px-2 py-2 text-sm text-text-muted">
+              {chats.length === 0 ? 'No chats yet' : 'No matches'}
             </div>
-          ))}
+          ) : (
+            filteredChats.map((chat) => {
+              const isActive = chat.id === activeChatId;
+              const menuOpen = openMenuId === chat.id;
+              return (
+                <div key={chat.id} className="relative">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onSelectChat(chat.id)}
+                    onKeyDown={(e) => e.key === 'Enter' && onSelectChat(chat.id)}
+                    className={`flex items-center justify-between w-full p-2 rounded-lg cursor-pointer group transition-colors ${
+                      isActive ? 'bg-terracotta/10' : 'hover:bg-terracotta/5'
+                    }`}
+                  >
+                    <span className={`truncate pr-4 text-sm ${chat.title ? 'text-text-main' : 'text-text-muted italic'}`}>
+                      {chat.title ?? 'Untitled'}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenMenuId(menuOpen ? null : chat.id);
+                      }}
+                      className="p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-terracotta/10 transition-opacity shrink-0"
+                      aria-label="Chat options"
+                    >
+                      <MoreHorizontal size={16} className="text-text-muted" />
+                    </button>
+                  </div>
+
+                  {menuOpen && (
+                    <div
+                      ref={menuRef}
+                      className="absolute right-0 top-full mt-1 z-50 bg-white border border-terracotta/15 rounded-xl shadow-lg py-1 min-w-[120px]"
+                    >
+                      <button
+                        onClick={() => {
+                          setOpenMenuId(null);
+                          onDeleteChat(chat.id);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors rounded-lg"
+                      >
+                        <Trash2 size={14} />
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       )}
 
